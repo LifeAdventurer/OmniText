@@ -33,69 +33,65 @@
           opacity 0.3s ease,
           visibility 0.3s ease;
         box-sizing: border-box;
+        white-space: normal;
+        word-wrap: break-word;
       }
       #fullScreenDisplay.visible {
         opacity: 1;
         visibility: visible;
       }
-      /* Add a subtle animation for buttons */
+
+      /* Container for each phrase + delete button pair */
+      .phrase-item-container {
+        display: flex; /* Arrange phrase button and delete button side-by-side */
+        align-items: stretch; /* Make buttons same height */
+        border-radius: 0.5rem; /* Rounded corners for the container */
+        overflow: hidden; /* Clip corners */
+        box-shadow:
+          0 1px 3px 0 rgba(0, 0, 0, 0.1),
+          0 1px 2px 0 rgba(0, 0, 0, 0.06); /* Add shadow */
+      }
+
+      /* Styling for the main phrase button */
       .phrase-button {
-        transition:
-          transform 0.1s ease-in-out,
-          box-shadow 0.1s ease-in-out;
-        position: relative; /* Needed for absolute positioning of the delete icon */
-        padding-right: 2.5rem; /* Add padding to make space for the delete icon */
+        transition: background-color 0.15s ease-in-out;
+        flex-grow: 1; /* Allow button to take available space */
+        /* Allow button height to grow with content */
+        height: auto;
+        /* Ensure text wraps within the button */
+        white-space: normal;
+        word-wrap: break-word;
+        text-align: left; /* Keep text aligned left */
+        /* Remove individual shadow, applied to container now */
+        /* Remove individual rounded corners on the right */
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
       }
-      .phrase-button:active {
-        transform: scale(0.98);
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
+      /* No active transform needed now */
+      /* .phrase-button:active { ... } */
       /* Ensure buttons wrap nicely */
+
+      /* Styling for the separate delete button */
+      .delete-button {
+        transition: background-color 0.15s ease-in-out;
+        /* Remove individual rounded corners on the left */
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        flex-shrink: 0; /* Prevent delete button from shrinking */
+        display: flex; /* Center content */
+        align-items: center;
+        justify-content: center;
+      }
+      .delete-button:active {
+        transform: scale(0.98); /* Optional: Add subtle click effect */
+      }
+
+      /* Ensure phrase item containers wrap nicely */
       #textList {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.75rem; /* Increased gap slightly for better spacing */
-      }
-      /* Style for the integrated delete icon */
-      .delete-icon {
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 2.5rem; /* Width of the clickable area */
-        color: white;
-        background-color: rgba(
-          239,
-          68,
-          68,
-          0.8
-        ); /* Semi-transparent red (red-500) */
-        border-top-right-radius: 0.5rem; /* Match button rounding */
-        border-bottom-right-radius: 0.5rem; /* Match button rounding */
-        font-weight: bold;
-        font-size: 1rem;
-        line-height: 1;
-        cursor: pointer;
-        transition: background-color 0.15s ease-in-out;
-      }
-      .delete-icon:hover {
-        background-color: rgba(
-          220,
-          38,
-          38,
-          1
-        ); /* Darker red on hover (red-600) */
-      }
-      .delete-icon:active {
-        background-color: rgba(
-          185,
-          28,
-          28,
-          1
-        ); /* Even darker red on click (red-700) */
+        gap: 0.75rem; /* Spacing between phrase item containers */
+        align-items: flex-start;
       }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -189,43 +185,52 @@
       }
 
       /**
-       * Renders the list of phrase buttons.
+       * Renders the list of phrase buttons with separate delete buttons.
        */
       function renderPhraseButtons() {
         const phrases = getPhrases();
-        textListDiv.innerHTML = ""; // Clear existing buttons
+        textListDiv.innerHTML = ""; // Clear existing items
 
         if (phrases.length === 0) {
           textListDiv.innerHTML =
             '<p class="text-gray-500">No phrases saved yet.</p>';
-          clearAllButton.style.display = "none"; // Hide clear button if list is empty
+          clearAllButton.style.display = "none";
           return;
         }
 
-        clearAllButton.style.display = "block"; // Show clear button if list has items
+        clearAllButton.style.display = "block";
 
         phrases.forEach((phrase, index) => {
-          // Main phrase button - now contains the delete icon
-          const button = document.createElement("button");
-          // Use textContent for security against XSS if phrase contained HTML
-          button.textContent = phrase;
-          // Added Tailwind classes for styling, padding-right for delete icon space
-          button.className =
-            "phrase-button w-full text-left p-3 bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-lg shadow transition duration-150 ease-in-out relative"; // Added w-full for consistent width
-          button.onclick = () => showFullScreen(phrase); // Click on button shows full screen
+          // Create a container for the phrase button and delete button
+          const itemContainer = document.createElement("div");
+          itemContainer.className = "phrase-item-container"; // Apply flex container styles
 
-          // Delete icon (span) inside the button
-          const deleteIcon = document.createElement("span");
-          deleteIcon.innerHTML = "&#x2715;"; // HTML entity for '✕' (multiplication sign)
-          deleteIcon.title = "Delete phrase";
-          deleteIcon.className = "delete-icon"; // Apply styles defined in <style>
-          deleteIcon.onclick = (e) => {
-            e.stopPropagation(); // IMPORTANT: Prevent the button's onclick (showFullScreen) from firing
+          // Create the main phrase button
+          const phraseButton = document.createElement("button");
+          phraseButton.textContent = phrase;
+          // Apply styling, ensure text wrapping, remove right radius
+          phraseButton.className =
+            "phrase-button p-3 bg-teal-500 hover:bg-teal-600 text-white font-medium"; // Tailwind classes + base class
+          phraseButton.onclick = () => showFullScreen(phrase);
+
+          // Create the delete button
+          const deleteBtn = document.createElement("button");
+          deleteBtn.innerHTML = "&#x2715;"; // '✕' symbol
+          deleteBtn.title = "Delete phrase";
+          // Apply styling, remove left radius
+          deleteBtn.className =
+            "delete-button p-3 bg-red-500 hover:bg-red-600 text-white font-bold"; // Tailwind classes + base class
+          deleteBtn.onclick = (e) => {
+            // No need for stopPropagation as it's a separate button
             deletePhrase(index);
           };
 
-          button.appendChild(deleteIcon); // Add the delete icon to the button
-          textListDiv.appendChild(button); // Add the button (with icon) to the list
+          // Append buttons to the container
+          itemContainer.appendChild(phraseButton);
+          itemContainer.appendChild(deleteBtn);
+
+          // Append the container to the list
+          textListDiv.appendChild(itemContainer);
         });
       }
 

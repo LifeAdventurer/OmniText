@@ -17,12 +17,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(
-          0,
-          0,
-          0,
-          0.9
-        ); /* Semi-transparent black background */
+        background-color: rgba(0, 0, 0, 0.9);
         color: white;
         display: flex;
         justify-content: center;
@@ -30,14 +25,14 @@
         font-size: 5vw; /* Responsive font size */
         text-align: center;
         padding: 20px;
-        z-index: 1000; /* Ensure it's on top */
-        cursor: pointer; /* Indicate it's clickable to close */
+        z-index: 1000;
+        cursor: pointer;
         opacity: 0;
         visibility: hidden;
         transition:
           opacity 0.3s ease,
           visibility 0.3s ease;
-        box-sizing: border-box; /* Include padding in element's total width and height */
+        box-sizing: border-box;
       }
       #fullScreenDisplay.visible {
         opacity: 1;
@@ -48,6 +43,8 @@
         transition:
           transform 0.1s ease-in-out,
           box-shadow 0.1s ease-in-out;
+        position: relative; /* Needed for absolute positioning of the delete icon */
+        padding-right: 2.5rem; /* Add padding to make space for the delete icon */
       }
       .phrase-button:active {
         transform: scale(0.98);
@@ -57,15 +54,48 @@
       #textList {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.5rem; /* Spacing between buttons */
+        gap: 0.75rem; /* Increased gap slightly for better spacing */
       }
-      /* Style for delete button */
-      .delete-button {
-        font-size: 0.75rem; /* Smaller text */
-        padding: 0.1rem 0.3rem; /* Smaller padding */
-        margin-left: 0.5rem; /* Space from text */
-        line-height: 1; /* Adjust line height */
-        vertical-align: middle; /* Align with text */
+      /* Style for the integrated delete icon */
+      .delete-icon {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem; /* Width of the clickable area */
+        color: white;
+        background-color: rgba(
+          239,
+          68,
+          68,
+          0.8
+        ); /* Semi-transparent red (red-500) */
+        border-top-right-radius: 0.5rem; /* Match button rounding */
+        border-bottom-right-radius: 0.5rem; /* Match button rounding */
+        font-weight: bold;
+        font-size: 1rem;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 0.15s ease-in-out;
+      }
+      .delete-icon:hover {
+        background-color: rgba(
+          220,
+          38,
+          38,
+          1
+        ); /* Darker red on hover (red-600) */
+      }
+      .delete-icon:active {
+        background-color: rgba(
+          185,
+          28,
+          28,
+          1
+        ); /* Even darker red on click (red-700) */
       }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -77,7 +107,7 @@
   </head>
   <body class="bg-gray-100 min-h-screen flex flex-col items-center p-4 md:p-8">
     <div class="w-full max-w-2xl bg-white rounded-lg shadow-md p-6">
-      <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">
+      <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
         OmniText
       </h1>
 
@@ -120,7 +150,7 @@
       const clearAllButton = document.getElementById("clearAllButton");
 
       // --- Constants ---
-      const STORAGE_KEY = "quickTextDisplayPhrases";
+      const STORAGE_KEY = "omniTextPhrases"; // Updated storage key slightly for the new name
 
       // --- Functions ---
 
@@ -175,33 +205,27 @@
         clearAllButton.style.display = "block"; // Show clear button if list has items
 
         phrases.forEach((phrase, index) => {
-          const buttonContainer = document.createElement("div"); // Use a container for button + delete
-          buttonContainer.className =
-            "flex items-center bg-gray-200 rounded-lg";
-
-          // Main phrase button
+          // Main phrase button - now contains the delete icon
           const button = document.createElement("button");
+          // Use textContent for security against XSS if phrase contained HTML
           button.textContent = phrase;
-          // Added padding, background, rounded corners, hover effect, and transition using Tailwind classes
+          // Added Tailwind classes for styling, padding-right for delete icon space
           button.className =
-            "phrase-button flex-grow text-left p-3 bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-l-lg shadow transition duration-150 ease-in-out";
-          button.onclick = () => showFullScreen(phrase);
+            "phrase-button w-full text-left p-3 bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-lg shadow transition duration-150 ease-in-out relative"; // Added w-full for consistent width
+          button.onclick = () => showFullScreen(phrase); // Click on button shows full screen
 
-          // Delete button
-          const deleteBtn = document.createElement("button");
-          deleteBtn.textContent = "✕"; // Simple 'x' for delete
-          deleteBtn.title = "Delete phrase";
-          // Style the delete button
-          deleteBtn.className =
-            "delete-button bg-red-500 hover:bg-red-700 text-white font-bold p-3 rounded-r-lg transition duration-150 ease-in-out";
-          deleteBtn.onclick = (e) => {
-            e.stopPropagation(); // Prevent triggering the phrase display
+          // Delete icon (span) inside the button
+          const deleteIcon = document.createElement("span");
+          deleteIcon.innerHTML = "&#x2715;"; // HTML entity for '✕' (multiplication sign)
+          deleteIcon.title = "Delete phrase";
+          deleteIcon.className = "delete-icon"; // Apply styles defined in <style>
+          deleteIcon.onclick = (e) => {
+            e.stopPropagation(); // IMPORTANT: Prevent the button's onclick (showFullScreen) from firing
             deletePhrase(index);
           };
 
-          buttonContainer.appendChild(button);
-          buttonContainer.appendChild(deleteBtn);
-          textListDiv.appendChild(buttonContainer);
+          button.appendChild(deleteIcon); // Add the delete icon to the button
+          textListDiv.appendChild(button); // Add the button (with icon) to the list
         });
       }
 
@@ -212,21 +236,18 @@
         const newPhrase = textInput.value.trim();
         if (newPhrase) {
           const phrases = getPhrases();
-          // Prevent duplicates (optional)
           if (!phrases.includes(newPhrase)) {
             phrases.push(newPhrase);
             savePhrases(phrases);
             renderPhraseButtons();
-            textInput.value = ""; // Clear input field
+            textInput.value = "";
           } else {
-            // Optional: Notify user if phrase already exists
-            alert("This phrase is already saved.");
+            alert("This phrase is already saved."); // Using alert for simplicity
           }
         } else {
-          // Optional: Notify user if input is empty
-          alert("Please enter some text.");
+          alert("Please enter some text."); // Using alert for simplicity
         }
-        textInput.focus(); // Keep focus on input
+        textInput.focus();
       }
 
       /**
@@ -234,11 +255,12 @@
        * @param {number} index - The index of the phrase to delete.
        */
       function deletePhrase(index) {
+        // Confirmation dialog
         if (confirm("Are you sure you want to delete this phrase?")) {
           const phrases = getPhrases();
-          phrases.splice(index, 1); // Remove the phrase at the specified index
+          phrases.splice(index, 1); // Remove the phrase
           savePhrases(phrases);
-          renderPhraseButtons(); // Re-render the buttons
+          renderPhraseButtons(); // Update the UI
         }
       }
 
@@ -251,32 +273,22 @@
             "Are you sure you want to delete ALL saved phrases? This cannot be undone.",
           )
         ) {
-          savePhrases([]); // Save an empty array
-          renderPhraseButtons(); // Re-render (will show the 'empty' message)
+          savePhrases([]);
+          renderPhraseButtons();
         }
       }
 
       // --- Event Listeners ---
-
-      // Add phrase when the Add button is clicked
       addButton.addEventListener("click", addPhrase);
-
-      // Add phrase when Enter key is pressed in the input field
       textInput.addEventListener("keypress", (event) => {
         if (event.key === "Enter") {
           addPhrase();
         }
       });
-
-      // Hide full-screen display when it's clicked
       fullScreenDisplay.addEventListener("click", hideFullScreen);
-
-      // Clear all phrases when the Clear All button is clicked
       clearAllButton.addEventListener("click", clearAllPhrases);
 
       // --- Initial Load ---
-
-      // Render buttons when the page loads
       document.addEventListener("DOMContentLoaded", renderPhraseButtons);
     </script>
   </body>

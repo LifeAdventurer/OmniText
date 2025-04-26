@@ -1,22 +1,22 @@
 const CACHE_NAME = "omnitext-cache-v1"; // A versioned name for your cache
 const ASSETS_TO_CACHE = [
-  "/", // Cache the root URL (usually index.html)
-  "/index.html", // Explicitly cache index.html
-  "/manifest.json", // Cache the manifest file
-  "/sw.js", // Cache the service worker itself
+  "./", // Cache the root URL (usually index.html)
+  "./index.html", // Explicitly cache index.html
+  "./manifest.json", // Cache the manifest file
+  "./sw.js", // Cache the service worker itself
   "https://cdn.tailwindcss.com", // Cache the Tailwind CSS CDN
   "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap", // Cache the Google Fonts CSS link
   // icons
-  "/icons/icon-48x48.png",
-  "/icons/icon-72x72.png",
-  "/icons/icon-96x96.png",
-  "/icons/icon-128x128.png",
-  "/icons/icon-144x144.png",
-  "/icons/icon-152x152.png",
-  "/icons/icon-192x192.png",
-  "/icons/icon-256x256.png",
-  "/icons/icon-384x384.png",
-  "/icons/icon-512x512.png",
+  "./icons/icon-48x48.png",
+  "./icons/icon-72x72.png",
+  "./icons/icon-96x96.png",
+  "./icons/icon-128x128.png",
+  "./icons/icon-144x144.png",
+  "./icons/icon-152x152.png",
+  "./icons/icon-192x192.png",
+  "./icons/icon-256x256.png",
+  "./icons/icon-384x384.png",
+  "./icons/icon-512x512.png",
 ];
 
 // Install event: Caches static assets

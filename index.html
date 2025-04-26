@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OmniText</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Custom styles */
+      body {
+        font-family: "Inter", sans-serif; /* Using Inter font */
+      }
+      /* Style for the full-screen display */
+      #fullScreenDisplay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(
+          0,
+          0,
+          0,
+          0.9
+        ); /* Semi-transparent black background */
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 5vw; /* Responsive font size */
+        text-align: center;
+        padding: 20px;
+        z-index: 1000; /* Ensure it's on top */
+        cursor: pointer; /* Indicate it's clickable to close */
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.3s ease,
+          visibility 0.3s ease;
+        box-sizing: border-box; /* Include padding in element's total width and height */
+      }
+      #fullScreenDisplay.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+      /* Add a subtle animation for buttons */
+      .phrase-button {
+        transition:
+          transform 0.1s ease-in-out,
+          box-shadow 0.1s ease-in-out;
+      }
+      .phrase-button:active {
+        transform: scale(0.98);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      /* Ensure buttons wrap nicely */
+      #textList {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem; /* Spacing between buttons */
+      }
+      /* Style for delete button */
+      .delete-button {
+        font-size: 0.75rem; /* Smaller text */
+        padding: 0.1rem 0.3rem; /* Smaller padding */
+        margin-left: 0.5rem; /* Space from text */
+        line-height: 1; /* Adjust line height */
+        vertical-align: middle; /* Align with text */
+      }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-gray-100 min-h-screen flex flex-col items-center p-4 md:p-8">
+    <div class="w-full max-w-2xl bg-white rounded-lg shadow-md p-6">
+      <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">
+        OmniText
+      </h1>
+
+      <div class="flex flex-col sm:flex-row gap-2 mb-6">
+        <input
+          type="text"
+          id="textInput"
+          class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Enter text or sentence..."
+        />
+        <button
+          id="addButton"
+          class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-5 rounded-lg shadow transition duration-150 ease-in-out"
+        >
+          Add Text
+        </button>
+      </div>
+
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">Saved Phrases:</h2>
+      <div id="textList" class="mb-4"></div>
+      <button
+        id="clearAllButton"
+        class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out mt-4"
+      >
+        Clear All Phrases
+      </button>
+    </div>
+
+    <div id="fullScreenDisplay">
+      <span id="fullScreenText"></span>
+    </div>
+
+    <script>
+      // --- DOM Elements ---
+      const textInput = document.getElementById("textInput");
+      const addButton = document.getElementById("addButton");
+      const textListDiv = document.getElementById("textList");
+      const fullScreenDisplay = document.getElementById("fullScreenDisplay");
+      const fullScreenText = document.getElementById("fullScreenText");
+      const clearAllButton = document.getElementById("clearAllButton");
+
+      // --- Constants ---
+      const STORAGE_KEY = "quickTextDisplayPhrases";
+
+      // --- Functions ---
+
+      /**
+       * Retrieves the list of phrases from localStorage.
+       * @returns {string[]} An array of phrases.
+       */
+      function getPhrases() {
+        const phrases = localStorage.getItem(STORAGE_KEY);
+        return phrases ? JSON.parse(phrases) : [];
+      }
+
+      /**
+       * Saves the list of phrases to localStorage.
+       * @param {string[]} phrases - The array of phrases to save.
+       */
+      function savePhrases(phrases) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(phrases));
+      }
+
+      /**
+       * Displays a phrase in full screen.
+       * @param {string} text - The text to display.
+       */
+      function showFullScreen(text) {
+        fullScreenText.textContent = text;
+        fullScreenDisplay.classList.add("visible");
+      }
+
+      /**
+       * Hides the full-screen display.
+       */
+      function hideFullScreen() {
+        fullScreenDisplay.classList.remove("visible");
+        fullScreenText.textContent = ""; // Clear text
+      }
+
+      /**
+       * Renders the list of phrase buttons.
+       */
+      function renderPhraseButtons() {
+        const phrases = getPhrases();
+        textListDiv.innerHTML = ""; // Clear existing buttons
+
+        if (phrases.length === 0) {
+          textListDiv.innerHTML =
+            '<p class="text-gray-500">No phrases saved yet.</p>';
+          clearAllButton.style.display = "none"; // Hide clear button if list is empty
+          return;
+        }
+
+        clearAllButton.style.display = "block"; // Show clear button if list has items
+
+        phrases.forEach((phrase, index) => {
+          const buttonContainer = document.createElement("div"); // Use a container for button + delete
+          buttonContainer.className =
+            "flex items-center bg-gray-200 rounded-lg";
+
+          // Main phrase button
+          const button = document.createElement("button");
+          button.textContent = phrase;
+          // Added padding, background, rounded corners, hover effect, and transition using Tailwind classes
+          button.className =
+            "phrase-button flex-grow text-left p-3 bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-l-lg shadow transition duration-150 ease-in-out";
+          button.onclick = () => showFullScreen(phrase);
+
+          // Delete button
+          const deleteBtn = document.createElement("button");
+          deleteBtn.textContent = "✕"; // Simple 'x' for delete
+          deleteBtn.title = "Delete phrase";
+          // Style the delete button
+          deleteBtn.className =
+            "delete-button bg-red-500 hover:bg-red-700 text-white font-bold p-3 rounded-r-lg transition duration-150 ease-in-out";
+          deleteBtn.onclick = (e) => {
+            e.stopPropagation(); // Prevent triggering the phrase display
+            deletePhrase(index);
+          };
+
+          buttonContainer.appendChild(button);
+          buttonContainer.appendChild(deleteBtn);
+          textListDiv.appendChild(buttonContainer);
+        });
+      }
+
+      /**
+       * Adds a new phrase to the list.
+       */
+      function addPhrase() {
+        const newPhrase = textInput.value.trim();
+        if (newPhrase) {
+          const phrases = getPhrases();
+          // Prevent duplicates (optional)
+          if (!phrases.includes(newPhrase)) {
+            phrases.push(newPhrase);
+            savePhrases(phrases);
+            renderPhraseButtons();
+            textInput.value = ""; // Clear input field
+          } else {
+            // Optional: Notify user if phrase already exists
+            alert("This phrase is already saved.");
+          }
+        } else {
+          // Optional: Notify user if input is empty
+          alert("Please enter some text.");
+        }
+        textInput.focus(); // Keep focus on input
+      }
+
+      /**
+       * Deletes a phrase from the list by its index.
+       * @param {number} index - The index of the phrase to delete.
+       */
+      function deletePhrase(index) {
+        if (confirm("Are you sure you want to delete this phrase?")) {
+          const phrases = getPhrases();
+          phrases.splice(index, 1); // Remove the phrase at the specified index
+          savePhrases(phrases);
+          renderPhraseButtons(); // Re-render the buttons
+        }
+      }
+
+      /**
+       * Clears all phrases from localStorage.
+       */
+      function clearAllPhrases() {
+        if (
+          confirm(
+            "Are you sure you want to delete ALL saved phrases? This cannot be undone.",
+          )
+        ) {
+          savePhrases([]); // Save an empty array
+          renderPhraseButtons(); // Re-render (will show the 'empty' message)
+        }
+      }
+
+      // --- Event Listeners ---
+
+      // Add phrase when the Add button is clicked
+      addButton.addEventListener("click", addPhrase);
+
+      // Add phrase when Enter key is pressed in the input field
+      textInput.addEventListener("keypress", (event) => {
+        if (event.key === "Enter") {
+          addPhrase();
+        }
+      });
+
+      // Hide full-screen display when it's clicked
+      fullScreenDisplay.addEventListener("click", hideFullScreen);
+
+      // Clear all phrases when the Clear All button is clicked
+      clearAllButton.addEventListener("click", clearAllPhrases);
+
+      // --- Initial Load ---
+
+      // Render buttons when the page loads
+      document.addEventListener("DOMContentLoaded", renderPhraseButtons);
+    </script>
+  </body>
+</html>

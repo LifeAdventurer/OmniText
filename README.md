@@ -9,13 +9,16 @@ instantly in full screen for quick and easy communication.
 
 ## Features
 
-- **Zero Build:** No complex build tools or frameworks needed. Just plan HTML,
+- **Zero Build:** No complex build tools or frameworks needed. Just plain HTML,
   CSS (via Tailwind CDN and inline styles), and JavaScript.
 - **Client-Side:** Runs entirely in the user's browser.
 - **Local Storage:** Saved phrases are stored directly in your browser's
   `localStorage`, keeping your data private and readily available.
 - **Full-Screen Display:** Tap a saved phrase to display it prominently in full
   screen, making it easy for others to read.
+- **Optional Sorting by Usage:** Enable or disable sorting phrases based on how
+  frequently they are used.
+- **Optional Usage Display:** Show or hide the usage count for each phrase.
 - **Progressive Web App (PWA):**
   - **Installable:** Add OmniText to your device's home screen for quick access,
     just like a native app.
@@ -33,5 +36,8 @@ instantly in full screen for quick and easy communication.
 4. Click any saved phrase button to display it in full screen.
 5. Tap anywhere on the full-screen display to dismiss it.
 6. Click the "✕" button next to a phrase to delete it (requires confirmation).
-7. Click "Clear All Phrases" to remove all saved phrases (requires
+7. Click the "Clear All Phrases" button to remove all saved phrases (requires
    confirmation).
+8. Toggle **Sort by usage** to order phrases by frequency instead of insertion
+   order.
+9. Toggle **Show usage** to display or hide the usage count badges.

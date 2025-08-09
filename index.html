@@ -123,9 +123,13 @@
 
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-semibold text-gray-700">Saved Phrases</h2>
-        <span id="sortHint" class="text-xs text-gray-500"
-          >sorted by most used</span
+        <label
+          class="flex items-center gap-2 text-sm text-gray-600"
+          title="Sort by most used, then recent"
         >
+          <input type="checkbox" id="sortByUseToggle" class="h-4 w-4" />
+          <span>Sort by usage</span>
+        </label>
       </div>
 
       <div id="textList" class="mb-4"></div>
@@ -149,9 +153,11 @@
       const fullScreenDisplay = document.getElementById("fullScreenDisplay");
       const fullScreenText = document.getElementById("fullScreenText");
       const clearAllButton = document.getElementById("clearAllButton");
+      const sortByUseToggle = document.getElementById("sortByUseToggle");
 
       // --- Constants ---
       const STORAGE_KEY = "omniTextPhrases"; // kept same for backwards compatibility
+      const SETTINGS_KEY = "omniTextSettings";
 
       // --- Helpers ---
       function escapeHtml(s) {
@@ -161,6 +167,24 @@
           .replace(/>/g, "&gt;")
           .replace(/\"/g, "&quot;")
           .replace(/'/g, "&#39;");
+      }
+
+      // --- Settings ---
+      function getSettings() {
+        try {
+          const raw = localStorage.getItem(SETTINGS_KEY);
+          const parsed = raw ? JSON.parse(raw) : {};
+          return { sortByUse: parsed.sortByUse ?? true };
+        } catch (_) {
+          return { sortByUse: true };
+        }
+      }
+      function saveSettings(s) {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+      }
+      function updateSortUI() {
+        const { sortByUse } = getSettings();
+        if (sortByUseToggle) sortByUseToggle.checked = !!sortByUse;
       }
 
       // --- Data Access Layer (with migration) ---
@@ -222,7 +246,7 @@
        * @param {string} text - The text to display & increment.
        */
       function showFullScreen(text) {
-        // bump usage first (so resort reflects immediately)
+        // bump usage first (so resort reflects immediately if enabled)
         incrementUsage(text);
 
         fullScreenText.textContent = text;
@@ -251,10 +275,14 @@
 
       /**
        * Renders the list of phrase buttons with separate delete buttons.
-       * Sorted by use rate (count desc, then recent lastUsed desc, then A→Z).
+       * If settings.sortByUse is true, sort by (count desc, lastUsed desc, text asc).
+       * Otherwise, keep original storage order (insertion order).
        */
       function renderPhraseButtons() {
         const phrases = getPhrasesRaw();
+        const { sortByUse } = getSettings();
+        updateSortUI();
+
         textListDiv.innerHTML = ""; // Clear existing items
 
         if (phrases.length === 0) {
@@ -266,14 +294,15 @@
 
         clearAllButton.style.display = "block";
 
-        // Sort by usage rate
-        const sorted = [...phrases].sort((a, b) => {
-          if (b.count !== a.count) return b.count - a.count; // most used first
-          if (b.lastUsed !== a.lastUsed) return b.lastUsed - a.lastUsed; // recently used first
-          return a.text.localeCompare(b.text);
-        });
+        const items = sortByUse
+          ? [...phrases].sort((a, b) => {
+              if (b.count !== a.count) return b.count - a.count; // most used first
+              if (b.lastUsed !== a.lastUsed) return b.lastUsed - a.lastUsed; // recently used first
+              return a.text.localeCompare(b.text);
+            })
+          : phrases; // keep original order
 
-        sorted.forEach((phrase) => {
+        items.forEach((phrase) => {
           // Container for phrase + delete button
           const itemContainer = document.createElement("div");
           itemContainer.className = "phrase-item-container";
@@ -367,9 +396,18 @@
       });
       fullScreenDisplay.addEventListener("click", hideFullScreen);
       clearAllButton.addEventListener("click", clearAllPhrases);
+      sortByUseToggle.addEventListener("change", (e) => {
+        const settings = getSettings();
+        settings.sortByUse = !!e.target.checked;
+        saveSettings(settings);
+        renderPhraseButtons();
+      });
 
       // --- Initial Load ---
-      document.addEventListener("DOMContentLoaded", renderPhraseButtons);
+      document.addEventListener("DOMContentLoaded", () => {
+        updateSortUI();
+        renderPhraseButtons();
+      });
 
       // --- PWA Service Worker Registration ---
       if ("serviceWorker" in navigator) {

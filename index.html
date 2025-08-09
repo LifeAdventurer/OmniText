@@ -36,10 +36,18 @@
         box-sizing: border-box;
         white-space: normal;
         word-wrap: break-word;
+        overflow: auto; /* allow scrolling if content exceeds viewport */
       }
       #fullScreenDisplay.visible {
         opacity: 1;
         visibility: visible;
+      }
+
+      /* Robust long-word wrapping utility */
+      .break-anywhere {
+        overflow-wrap: anywhere; /* modern */
+        word-break: break-word; /* fallback */
+        hyphens: auto; /* optional soft hyphenation */
       }
 
       /* Container for each phrase + delete button pair */
@@ -151,7 +159,7 @@
     </div>
 
     <div id="fullScreenDisplay">
-      <span id="fullScreenText"></span>
+      <span id="fullScreenText" class="break-anywhere"></span>
     </div>
 
     <script>
@@ -331,7 +339,7 @@
           );
           phraseButton.innerHTML = `
             <div class="flex items-start justify-between gap-2">
-              <span class="block">${escapeHtml(phrase.text)}</span>
+              <span class="block break-anywhere">${escapeHtml(phrase.text)}</span>
               ${showUsage ? `<span class=\"shrink-0 text-xs font-semibold bg-black/20 rounded px-1\">×${phrase.count}</span>` : ""}
             </div>`;
           phraseButton.onclick = () => showFullScreen(phrase.text);
